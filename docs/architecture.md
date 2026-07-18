@@ -1,10 +1,26 @@
 # Architecture: Pluggable Verticals
 
 RedLayer separates a **domain-agnostic engine** from **pluggable verticals**.
-The engine runs scans, grades from real tool calls, and serves the API without
+The engine runs scans, grades from observable output, and serves the API without
 knowing what domain it is attacking. Each vertical is a self-contained package
 that teaches the engine one domain. **Finance** is the first; new domains
 (healthcare, legal, HR, support, …) drop in without engine changes.
+
+> **Direction update (2026-07-18).** The active product is an **SMB
+> loan-underwriting** red-teaming dashboard built on NVIDIA **garak**
+> (see [backend-plan.md](backend-plan.md), [frontend-plan.md](frontend-plan.md)).
+> The pattern below still holds, with this mapping:
+>
+> - A **vertical** is still a domain (finance). A **scenario** is the SMB
+>   underwriting target + a garak probe suite, surfaced as **findings** rather
+>   than a scripted attempt sequence.
+> - Grading is done by **garak detectors** on observable output (tool calls,
+>   canary strings) — the "deterministic, no-LLM-judge" rule is unchanged.
+> - The **frontend is config-driven**: suites and frameworks come from
+>   `GET /api/config`, so there is no frontend vertical registry (removed).
+> - **Migration status:** the code under `backend/src/redlayer/` is the pattern
+>   scaffold from the first direction (Accounts Payable scenario). It stays as a
+>   reference for the pattern and is being migrated to the garak/SMB engine.
 
 ## Concepts
 
@@ -53,19 +69,15 @@ api/
 
 ```
 core/
-  types.ts       # mirror of the backend normalized model
-  apiClient.ts   # fetch client for the 3 endpoints
-  polling.ts     # poll status until a terminal state
-verticals/
-  types.ts       # VerticalConfig / ScenarioConfig (display metadata only)
-  registry.ts    # VERTICALS list + findScenario()
-  finance/
-    config.ts    # finance display copy, amounts, attack-chain captions
-components/       # shared, vertical-agnostic UI (framework TBD)
+  types.ts       # mirror of the backend JSON contract (Config, Scan, Finding, Retest)
+  apiClient.ts   # client for the 6 endpoints, with USE_MOCKS toggle
+  polling.ts     # poll /scans/:id until complete/failed
+components/       # shared UI (framework TBD)
+mocks/            # (frontend/mocks/) static fixtures for USE_MOCKS mode
 ```
 
-The UI renders normalized scan data generically; a vertical config only supplies
-**copy and framing**, never per-attempt rendering.
+The UI is config-driven: suites and frameworks come from `GET /api/config`, and
+findings render generically from the API. There is no frontend vertical registry.
 
 ## How to add a vertical
 

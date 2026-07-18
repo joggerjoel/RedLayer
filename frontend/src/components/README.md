@@ -3,18 +3,18 @@
 Framework-specific, so intentionally empty until the UI framework is chosen
 (Vite+React, Next.js, etc.).
 
-These components are **vertical-agnostic** — they render normalized scan data
-from the API and take copy from the active vertical config
-(`src/verticals/`). Do not create per-attack or per-vertical component variants
-(docs/frontend-plan.md).
+Components render normalized data from the API (see `src/core/types.ts`).
+**Status is never conveyed by color alone** — pair every red/green with an icon
+and text (docs/frontend-plan.md).
 
 Planned components:
 
-- `StartScreen` — target, forbidden outcome, amount at risk, start button
-- `AttemptList` — status via icon **and** text, not color alone
-- `AttemptDetail` — one shared panel for every attempt type
-- `RunSummary` — attempts executed / blocked / succeeded / amount at risk
-- `VulnerabilityCard` — evidence and the exact tool call
-- `AttackChain` — ordered nodes with simple arrows
-- `PatchReplay` — before/after plus the **Patch Precision** panel
-  (malicious blocked vs. legitimate allowed)
+- `ScanConfig` — target field, suite + framework multi-selects, run button
+- `MetricCards` — risk score (red/amber/green thresholds), attack success rate,
+  findings count, regs implicated
+- `FindingsList` — one row per finding: severity indicator, title, badge, chevron
+- `FindingDetail` — injected document with highlighted `injection_span`, agent
+  response + `trigger_matched`, detected harm, regulation badges (rationale in
+  tooltip), remediation
+- `RetestControl` — spinner → update status → animate red→green, before/after
+- `ProgressBar` — from `progress.completed / progress.total` while scanning

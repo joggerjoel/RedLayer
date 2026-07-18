@@ -1,53 +1,88 @@
-// Thin, framework-neutral client for the RedLayer API (docs/*-plan.md "API
-// Contract"). Uses fetch so it works under any Node.js UI framework.
+// Framework-neutral client for the SMB-lending red-teaming API
+// (docs/backend-plan.md). Build against mocks first, then flip USE_MOCKS.
 
-import type { ScanStatus } from "./types";
+import type {
+  Config,
+  FindingDetail,
+  FindingSummary,
+  RetestResult,
+  Scan,
+} from "./types";
+
+export const USE_MOCKS = true; // flip to false when the backend is live
+
+const BASE = USE_MOCKS ? "/mocks" : "http://localhost:8000/api";
+
+// In mock mode there are no dynamic routes, so map each call to a static file.
+const MOCK_FILES = {
+  config: "config.json",
+  scan: "scan_complete.json",
+  findings: "findings.json",
+  finding: "finding_001.json",
+  retest: "retest_blocked.json",
+} as const;
+
+async function getJson<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`GET ${url} failed: ${res.status}`);
+  return res.json() as Promise<T>;
+}
 
 export interface StartScanRequest {
-  target_id: string;
-  objective_id: string;
-  mode?: string;
+  target: string;
+  suites: string[];
+  frameworks: string[];
 }
 
-export interface StartScanResponse {
-  scan_id: string;
-  state: string;
-  poll_url: string;
-}
-
-export interface ReplayRequest {
-  attempt_id: string;
-  mitigation_id: string;
-}
-
-export function createApiClient(baseUrl = "") {
-  async function post<T>(path: string, body: unknown): Promise<T> {
-    const res = await fetch(`${baseUrl}${path}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`);
-    return res.json() as Promise<T>;
-  }
-
+export function createApiClient() {
   return {
-    startScan(req: StartScanRequest) {
-      return post<StartScanResponse>("/scan/start", {
-        mode: "deterministic-demo",
-        ...req,
-      });
-    },
-    async getStatus(scanId: string): Promise<ScanStatus> {
-      const res = await fetch(`${baseUrl}/scan/${scanId}/status`);
-      if (!res.ok) throw new Error(`GET status failed: ${res.status}`);
-      return res.json() as Promise<ScanStatus>;
-    },
-    replay(scanId: string, req: ReplayRequest) {
-      return post<{ scan_id: string; state: string }>(
-        `/scan/${scanId}/replay`,
-        req,
+    getConfig(): Promise<Config> {
+      return getJson<Config>(
+        USE_MOCKS ? `${BASE}/${MOCK_FILES.config}` : `${BASE}/config`,
       );
+    },
+
+    async startScan(req: StartScanRequest): Promise<Scan> {
+      if (USE_MOCKS) return getJson<Scan>(`${BASE}/${MOCK_FILES.scan}`);
+      const res = await fetch(`${BASE}/scans`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(req),
+      });
+      if (!res.ok) throw new Error(`POST /scans failed: ${res.status}`);
+      return res.json() as Promise<Scan>;
+    },
+
+    getScan(scanId: string): Promise<Scan> {
+      return getJson<Scan>(
+        USE_MOCKS ? `${BASE}/${MOCK_FILES.scan}` : `${BASE}/scans/${scanId}`,
+      );
+    },
+
+    getFindings(scanId: string): Promise<{ findings: FindingSummary[] }> {
+      return getJson(
+        USE_MOCKS
+          ? `${BASE}/${MOCK_FILES.findings}`
+          : `${BASE}/scans/${scanId}/findings`,
+      );
+    },
+
+    getFinding(findingId: string): Promise<FindingDetail> {
+      return getJson<FindingDetail>(
+        USE_MOCKS
+          ? `${BASE}/${MOCK_FILES.finding}`
+          : `${BASE}/findings/${findingId}`,
+      );
+    },
+
+    async retest(findingId: string): Promise<RetestResult> {
+      if (USE_MOCKS)
+        return getJson<RetestResult>(`${BASE}/${MOCK_FILES.retest}`);
+      const res = await fetch(`${BASE}/findings/${findingId}/retest`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(`POST retest failed: ${res.status}`);
+      return res.json() as Promise<RetestResult>;
     },
   };
 }

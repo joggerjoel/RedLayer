@@ -1,0 +1,14 @@
+{
+  "suites": [
+    { "id": "latent_injection", "label": "Latent injection" },
+    { "id": "unauthorized_action", "label": "Unauthorized action" },
+    { "id": "pii_exfiltration", "label": "PII exfiltration" },
+    { "id": "disclosure_bypass", "label": "Disclosure bypass" }
+  ],
+  "frameworks": [
+    { "id": "ECOA", "label": "ECOA / Reg B" },
+    { "id": "FCRA", "label": "FCRA" },
+    { "id": "GLBA", "label": "GLBA" },
+    { "id": "SR_11-7", "label": "SR 11-7" }
+  ]
+}

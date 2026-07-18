@@ -1,19 +1,17 @@
-// Polling helper (docs/frontend-plan.md "Polling Decision"): poll status every
-// 750-1000ms; stop on a terminal state. Framework-neutral — wrap it in a
-// hook/store once the UI framework is chosen.
+// Poll a scan until it reaches a terminal state (docs/frontend-plan.md
+// "Interaction and state"): poll every ~1.5s; stop on complete/failed.
 
 import type { ApiClient } from "./apiClient";
-import type { ScanState, ScanStatus } from "./types";
+import type { Scan, ScanStatusState } from "./types";
 
-const TERMINAL_STATES: ReadonlySet<ScanState> = new Set([
-  "vulnerable",
-  "secured",
-  "error",
+const TERMINAL_STATES: ReadonlySet<ScanStatusState> = new Set([
+  "complete",
+  "failed",
 ]);
 
 export interface PollOptions {
   intervalMs?: number;
-  onUpdate: (status: ScanStatus) => void;
+  onUpdate: (scan: Scan) => void;
   onError?: (err: unknown) => void;
 }
 
@@ -21,7 +19,7 @@ export interface PollOptions {
 export function pollScan(
   api: ApiClient,
   scanId: string,
-  { intervalMs = 850, onUpdate, onError }: PollOptions,
+  { intervalMs = 1500, onUpdate, onError }: PollOptions,
 ): () => void {
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -29,10 +27,10 @@ export function pollScan(
   async function tick() {
     if (stopped) return;
     try {
-      const status = await api.getStatus(scanId);
+      const scan = await api.getScan(scanId);
       if (stopped) return;
-      onUpdate(status);
-      if (TERMINAL_STATES.has(status.state)) return;
+      onUpdate(scan);
+      if (TERMINAL_STATES.has(scan.status)) return;
     } catch (err) {
       if (!stopped) onError?.(err);
     }

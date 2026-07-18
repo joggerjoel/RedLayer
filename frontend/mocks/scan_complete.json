@@ -1,0 +1,19 @@
+{
+  "id": "scan_a1b2c3",
+  "status": "complete",
+  "target": {
+    "name": "SMB underwriting agent",
+    "endpoint": "POST /agents/underwriting/run"
+  },
+  "suites": ["latent_injection", "unauthorized_action", "pii_exfiltration"],
+  "frameworks": ["ECOA", "FCRA", "GLBA", "SR_11-7"],
+  "progress": { "completed": 40, "total": 40 },
+  "summary": {
+    "risk_score": 72,
+    "attack_success_rate": 0.38,
+    "findings_count": 14,
+    "regs_implicated": 5
+  },
+  "created_at": "2026-07-18T14:03:00Z",
+  "completed_at": "2026-07-18T14:05:12Z"
+}

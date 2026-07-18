@@ -1,56 +1,88 @@
-// Domain-agnostic types mirroring the backend's normalized model
-// (backend/src/redlayer/core/models.py and docs/*-plan.md). These are shared by
-// every vertical so the UI renders any scan without vertical-specific branches.
+// Types mirroring the backend JSON contract (docs/backend-plan.md "API contract").
+// IDs are opaque strings — never parse them.
 
-export type AttemptStatus =
-  "pending" | "running" | "blocked" | "succeeded" | "error";
+export type ScanStatusState = "queued" | "running" | "complete" | "failed";
+export type FindingStatus = "failed" | "blocked";
+export type Severity = "critical" | "high" | "medium" | "low";
 
-export type ScanState =
-  "running" | "vulnerable" | "replaying" | "secured" | "error";
-
-export type PoisonedSourceType =
-  "chat" | "invoice" | "email" | "tool" | "memory";
-
-export interface PoisonedSource {
-  type: PoisonedSourceType;
-  name: string;
-  summary: string;
-}
-
-export interface ToolCall {
-  name: string;
-  arguments: Record<string, unknown>;
-  result?: unknown;
-}
-
-export interface AttackAttempt {
+export interface Option {
   id: string;
-  index: number;
   label: string;
-  technique: string;
-  payload_summary: string;
-  poisoned_sources: PoisonedSource[];
-  agent_response?: string;
-  tool_calls: ToolCall[];
-  status: AttemptStatus;
-  block_reason?: string;
+}
+
+export interface Config {
+  suites: Option[];
+  frameworks: Option[];
+}
+
+export interface ScanTarget {
+  name: string;
+  endpoint: string;
+}
+
+export interface ScanProgress {
+  completed: number;
+  total: number;
 }
 
 export interface ScanSummary {
-  attempts_executed: number;
-  blocked: number;
-  succeeded: number;
-  errors: number;
-  amount_at_risk: number;
+  risk_score: number; // 0-100, higher = worse
+  attack_success_rate: number; // 0-1
+  findings_count: number;
+  regs_implicated: number;
 }
 
-export interface ScanStatus {
-  scan_id: string;
-  state: ScanState;
-  current_attempt_index: number;
-  attempts: AttackAttempt[];
+export interface Scan {
+  id: string;
+  status: ScanStatusState;
+  target: ScanTarget;
+  suites: string[];
+  frameworks: string[];
+  progress: ScanProgress;
   summary: ScanSummary | null;
-  evidence: unknown | null;
-  replay: unknown | null;
-  error: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface FindingSummary {
+  id: string;
+  title: string;
+  severity: Severity;
+  harm_category: string;
+  status: FindingStatus;
+  regulations: string[];
+}
+
+export interface AgentResponse {
+  text: string;
+  tool_calls: { name: string; arguments: Record<string, unknown> }[];
+  trigger_matched: string | null;
+}
+
+export interface RegulationRef {
+  code: string;
+  name: string;
+  rationale: string;
+}
+
+export interface FindingDetail extends Omit<FindingSummary, "regulations"> {
+  probe: string;
+  injected_document: {
+    field: string;
+    content: string;
+    injection_span: [number, number];
+  };
+  agent_response: AgentResponse;
+  detected_harm: string;
+  regulations: RegulationRef[];
+  remediation: string;
+  retest_history: { timestamp: string; result: FindingStatus }[];
+}
+
+export interface RetestResult {
+  id: string;
+  result: FindingStatus;
+  previous_result: FindingStatus;
+  timestamp: string;
+  agent_response: AgentResponse;
 }

@@ -1,60 +1,67 @@
 # RedLayer
 
-**A deterministic, autonomous red-team demo that exposes a layered prompt-injection vulnerability in a mock finance AI agent — then patches it and proves the fix.**
+**A red-teaming dashboard that scans an SMB loan-underwriting AI agent for prompt-injection vulnerabilities and maps each one to the financial regulation it would violate.**
 
-RedLayer attacks a mock **Accounts Payable Agent**, escalates through increasingly layered prompt-injection techniques across chat, documents, email, and tool output, lands one exploit through a real tool call, applies a backend mitigation, and replays the same exploit to show it blocked — all in under 90 seconds.
+RedLayer probes a mock **SMB loan underwriting agent** for malicious instructions
+hidden inside the documents it reads (bank statements, tax returns) — injections
+that can trick it into approving loans it shouldn't or leaking applicant data.
+Every finding is mapped to the specific regulation a lender would be violating
+(**ECOA, FCRA, GLBA, SR 11-7**). The engine is built on NVIDIA's open-source
+[garak](https://github.com/NVIDIA/garak) scanner.
 
-> ⚠️ **This project contains intentional vulnerabilities for demonstration.** The target agent is deliberately insecure. Nothing here is production-ready or safe to deploy against real systems. See [SECURITY.md](SECURITY.md).
+> ⚠️ **This project contains intentional vulnerabilities for demonstration.** The
+> target agent is deliberately insecure and all data is simulated. Nothing here is
+> production-ready or safe to point at real systems. See [SECURITY.md](SECURITY.md).
 
 ## The story it tells
 
-1. Define a forbidden financial outcome — paying an attacker-controlled account.
-2. Run an autonomous scan of five escalating attacks.
-3. Attacks 1–4 are **blocked**, each for a specific, explained reason.
-4. Attack 5 **succeeds**: layered poisoning (invoice + fake CFO email + poisoned bank-verification result) tricks the agent into calling `prepare_payment` for the wrong account.
-5. Inspect proof: the exact tool call and the ordered attack chain.
-6. Apply a mitigation and replay.
-7. Confirm the malicious change is now blocked **and** a legitimate, out-of-band-approved change still goes through — proving the patch is precise, not a blanket block.
+1. Configure a scan — pick attack suites and compliance frameworks.
+2. Run it and watch progress.
+3. Browse findings: each shows the injected document, what the agent did, the
+   harm, and the regulations implicated.
+4. **The key demo moment:** apply a fix and **re-test a finding — watch it flip
+   from "failed" (red) to "blocked" (green).**
 
-## The vulnerability under test
+## Attack suites
 
-The mock agent will honor a beneficiary (destination-account) change **if and only if `verify_bank_account` returns `verified`** — trusting a single tool's output as authorization, with no independent cross-check. Attack 5 poisons that tool. The fix: require an independently verified out-of-band approval, sourced from a trusted channel the attacker cannot influence.
+| Suite               | What it probes                               |
+| ------------------- | -------------------------------------------- |
+| Latent injection    | Instructions hidden in document fields       |
+| Unauthorized action | Coerced bad tool calls (e.g. `approve_loan`) |
+| PII exfiltration    | Cross-applicant data leaks                   |
+| Disclosure bypass   | Missing adverse-action notices               |
 
-## Demo scenario
+## Design principles (carried from the engine's roots)
 
-| Field            | Value                                                   |
-| ---------------- | ------------------------------------------------------- |
-| Vendor           | CloudGrid Infrastructure                                |
-| Invoice          | CG-2026-1842                                            |
-| Amount           | $42,850 (simulated)                                     |
-| Approved account | ending 3381                                             |
-| Attacker account | ending 9017                                             |
-| Control case     | invoice CG-2026-1901 → account 7742, genuinely approved |
-
-## Design principles
-
-- **Deterministic.** The target agent's decision is rule-based, not model-sampled. An LLM may generate flavor text, but it never decides whether an attempt succeeds. Grading inspects real tool-call logs.
-- **Polling, not streaming.** A simple REST API with an in-memory scan store; the frontend polls status.
-- **Evidence-driven.** Success is proven by an actual `prepare_payment` tool call, not an assertion.
+- **Deterministic demo.** The target agent's decisions are rule-based, not
+  model-sampled; garak drives the probes and grades from observable output (tool
+  calls, canary strings). Scans reproduce run-to-run.
+- **Real fixes, not UI swaps.** Re-test changes actual backend behavior, and a fix
+  blocks the injection while still allowing a legitimate approval (precision, not a
+  blanket block).
 
 ## Repository layout
 
 ```
 .
-├── backend/     # Python — mock agent, scan orchestration, deterministic grader, REST API
-├── frontend/    # Node.js — single-page demo UI (start → scan → finding → patch → replay)
-└── docs/        # Plans and to-dos for both halves
+├── backend/     # Python — garak-based engine, mock target, compliance mapping, API
+├── frontend/    # Node.js — config → dashboard → finding detail → re-test
+│   └── mocks/   # static fixtures; build the whole UI before the backend is live
+└── docs/        # plans, to-dos, architecture; archived first-direction docs
 ```
 
 ## Documentation
 
-- [Architecture: pluggable verticals](docs/architecture.md) — how the engine and domain modules fit together
+- [Architecture: pluggable verticals](docs/architecture.md)
 - [Backend plan](docs/backend-plan.md) · [Backend to-do](docs/backend-todo.md)
 - [Frontend plan](docs/frontend-plan.md) · [Frontend to-do](docs/frontend-todo.md)
+- [Archived: Accounts Payable demo](docs/archive/accounts-payable-demo/) — the first direction
 
 ## Status
 
-**Planning.** The plans and to-dos are complete; application code has not yet been scaffolded.
+**Planning + scaffolding.** Plans and to-dos reflect the SMB-lending direction;
+frontend mock fixtures are in place. The backend `src/` still contains the
+pattern scaffold from the first direction and is being migrated to garak.
 
 ## License
 
