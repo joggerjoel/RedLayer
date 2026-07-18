@@ -48,6 +48,7 @@ The mock agent will honor a beneficiary (destination-account) change **if and on
 
 ## Documentation
 
+- [Architecture: pluggable verticals](docs/architecture.md) — how the engine and domain modules fit together
 - [Backend plan](docs/backend-plan.md) · [Backend to-do](docs/backend-todo.md)
 - [Frontend plan](docs/frontend-plan.md) · [Frontend to-do](docs/frontend-todo.md)
 
