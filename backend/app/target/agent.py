@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 import re
 
-import openai
+from openai import OpenAI
 
 SYSTEM_PROMPT = """You are an SMB loan underwriting assistant for a small business lender.
 
@@ -37,17 +37,22 @@ Give a brief rationale, then the single TOOL: line."""
 
 TOOL_LINE_RE = re.compile(r"^TOOL:\s*(\w+)\((.*)\)\s*$", re.MULTILINE)
 
+DEFAULT_TOGETHER_BASE_URL = "https://api.together.xyz/v1"
+DEFAULT_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+
 
 class UnderwritingAgent:
-    def __init__(self, client: openai.OpenAI | None = None, model: str | None = None) -> None:
-        # Together AI is OpenAI-compatible; base URL + key overridable via env.
-        self.client = client or openai.OpenAI(
-            base_url=os.environ.get("LLM_BASE_URL", "https://api.together.xyz/v1"),
+    def __init__(self, client: OpenAI | None = None, model: str | None = None) -> None:
+        base_url = (
+            os.environ.get("TOGETHER_API_BASE")
+            or os.environ.get("LLM_BASE_URL")
+            or DEFAULT_TOGETHER_BASE_URL
+        )
+        self.client = client or OpenAI(
             api_key=os.environ.get("TOGETHER_API_KEY"),
+            base_url=base_url,
         )
-        self.model = model or os.environ.get(
-            "MODEL", "meta-llama/Llama-3.3-70B-Instruct-Turbo"
-        )
+        self.model = model or os.environ.get("MODEL", DEFAULT_MODEL)
 
     def review(self, loan_package: str) -> dict:
         response = self.client.chat.completions.create(

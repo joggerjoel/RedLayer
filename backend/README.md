@@ -11,7 +11,7 @@ findings, per-finding re-test, and the JSON API the frontend consumes.
 
 ```
 uv sync
-cp .env.example .env   # fill in ANTHROPIC_API_KEY
+cp .env.example .env   # fill in TOGETHER_API_KEY
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
