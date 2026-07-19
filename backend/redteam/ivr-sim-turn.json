@@ -1,0 +1,18 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "name": "ivr-sim-turn",
+      "uri": "http://localhost:8080/voice/sim/turn",
+      "method": "post",
+      "headers": { "Content-Type": "application/json" },
+      "req_template_json_object": {
+        "campaign_id": "patient-advocate-poc",
+        "history": [],
+        "message": "$INPUT"
+      },
+      "response_json": true,
+      "response_json_field": "reply",
+      "request_timeout": 60
+    }
+  }
+}

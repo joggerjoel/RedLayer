@@ -1,0 +1,4 @@
+# Scan artifacts: keep the hitlog (attack library) + FINDINGS.md; ignore the
+# large/raw garak reports (kept local + on aorus4 under ~/.local/share/garak/).
+*.report.jsonl
+*.report.html
