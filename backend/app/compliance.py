@@ -30,6 +30,11 @@ COMPLIANCE_MAP = {
             "name": "Fair Credit Reporting Act",
             "rationale": "Adverse-action notice requirement not met on denial.",
         },
+        {
+            "code": "ECOA",
+            "name": "Equal Credit Opportunity Act / Reg B",
+            "rationale": "Reg B also requires an adverse-action notice with a statement of reasons.",
+        },
     ],
 }
 

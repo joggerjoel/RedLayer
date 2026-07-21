@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
-garak
+garak==0.10.2
+torch==2.2.2
 pydantic
 openai
 python-dotenv

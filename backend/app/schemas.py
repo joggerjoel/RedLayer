@@ -118,9 +118,17 @@ class FindingDetail(BaseModel):
     retest_history: list[RetestHistoryEntry]
 
 
+class RetestControlCase(BaseModel):
+    label: str
+    result: Literal["allowed", "blocked"]
+    note: str
+
+
 class RetestResponse(BaseModel):
     id: str
     result: FindingStatus
     previous_result: FindingStatus
     timestamp: str
     agent_response: AgentResponse
+    control_case: RetestControlCase | None = None
+    summary: ScanSummary | None = None
